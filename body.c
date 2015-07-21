@@ -41,11 +41,13 @@ void print_version(void);
 
 int main(int argc, char* argv[])
 {
-    FILE*   fp;
-    int     i;
-    int     res, index, lines;
-    char*   path = NULL;
-    char**  buf  = NULL;
+    int     i       = 0,
+            res     = 0,
+            index   = 0,
+            lines   = 0;
+    char*   path    = NULL,
+        **  buf     = NULL;
+    FILE*   fp      = NULL;
 
     body_t bodyopt = {
         0, 0, 0, 0,
@@ -102,7 +104,8 @@ int main(int argc, char* argv[])
         }
     } else {
         if ((buf = p_read_file_char(1024, 1024, stdin)) == NULL) {
-            fprintf(stderr, "%s p_read_file_char() failure\n", PROGNAME);
+            fprintf(stderr, "%s p_read_file_char() failure\n",
+                    PROGNAME);
             
             return 2;
         }
@@ -119,7 +122,8 @@ FILE* sopen_file(char* path)
     FILE*   fp;
 
     if ((fp = fopen(path, "r")) == NULL) {
-        fprintf(stderr, "%s: fopen() failure\n", PROGNAME);
+        fprintf(stderr, "%s: fopen() failure\n",
+                PROGNAME);
 
         exit(3);
     }
@@ -132,20 +136,23 @@ int check_file_access(char* path)
     struct  stat statbuf;
 
     if (access(path, R_OK)) {
-        fprintf(stderr, "%s: cannnot open '%s' for reading: Permission denied\n", PROGNAME, path);
+        fprintf(stderr, "%s: cannnot open '%s' for reading: Permission denied\n",
+                PROGNAME, path);
 
         return 1;
     }
 
     if (stat(path, &statbuf) != 0) {
-        fprintf(stderr, "%s: cannnot open '%s' for reading: No such file or directory\n", PROGNAME, path);
+        fprintf(stderr, "%s: cannnot open '%s' for reading: No such file or directory\n",
+                PROGNAME, path);
 
         return 2;
     }
     if (S_ISDIR(statbuf.st_mode)) {
-        fprintf(stderr, "%s: error reading '%s': Is a directory\n", PROGNAME, path);
+        fprintf(stderr, "%s: error reading '%s': Is a directory\n",
+                PROGNAME, path);
 
-        return 2;
+        return 3;
     }
 
     return 0;
@@ -154,8 +161,8 @@ int check_file_access(char* path)
 int print_body(int lines, char** buf, body_t* bodyopt)
 {
     int i;
-    unsigned int b_center;
-    unsigned int n_center;
+    unsigned int    b_center,
+                    n_center;
 
     b_center = lines / 2;
 
@@ -308,12 +315,12 @@ With more than one FILE, precede each with a header giving the file name.\n\
 With no FILE, or when FILE is -, read standard input.\n\
 \n\
 Mandatory arguments to long options are mandatory for short options too.\n\
-  -n, --lines=[-]K         print the center K lines instead of the center 10\n\
-  -q, --quiet              never print headers giving file names\n\
-  -v, --verbose            allways print headers giving file names\n\
+  -n, --lines=[-]K        print the center K lines instead of the center 10\n\
+  -q, --quiet             never print headers giving file names\n\
+  -v, --verbose           allways print headers giving file names\n\
 \n\
-      --help               display this help and exit\n\
-      --version            output version information and exit\n\
+      --help     display this help and exit\n\
+      --version  output version information and exit\n\
 \n\
 Report %s bugs to %s <%s>\n\
 ",
