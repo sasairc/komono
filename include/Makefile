@@ -6,7 +6,7 @@ MAKE	:= make
 CC	:= cc
 rm	:= rm
 CFLAGS	=
-SRCS	= file.c memory.c string.c signal.c
+SRCS	= $(wildcard *.c)
 OBJS	= $(SRCS:.c=.so)
 PKGCFG	= `pkg-config --cflags --libs glib-2.0`
 
