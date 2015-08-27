@@ -1,7 +1,7 @@
 /*
+ * clangsay -  The classic cowsay program, written in C.
  *
  *
- * string.c
  *
  * Copyright (c) 2015 sasairc
  * This work is free. You can redistribute it and/or modify it under the
@@ -95,7 +95,11 @@ char* strlion(int argnum, ...)
         return NULL;
     }
     for (i = 0; i < argnum; i++) {
-        strcat(buf, argmnt[i]);     /* string concatenate */
+        if (i == 0) {
+            strcpy(buf, argmnt[i]);
+        } else {
+            strcat(buf, argmnt[i]);     /* string concatenate */
+        }
     }
     free(argmnt);
 
