@@ -2,6 +2,7 @@
 # 簡易Makefile
 #
 
+PREFIX	:= /usr/local
 MAKE	:= make
 CC	:= cc
 rm	:= rm
@@ -15,10 +16,18 @@ DEFCFLAGS = -shared -fPIC \
 
 all: $(OBJS)
 
-%.so: %.c %.h
-	$(CC) $(DEFCFLAGS) $(CFLAGS) -c $< -o $@
+%.so: %.c
+	$(CC) $(DEFCFLAGS) $(CFLAGS) $< -o libsasairc_$@
 
 clean:
-	-$(RM) -f $(OBJS)
+	-$(RM) -f *.so
 
-.PHONY: clean all
+install: $(OBJS)
+	install -pd $(PREFIX)/lib
+	install -pd $(PREFIX)/include/sasairc
+	install -pm 755 *.so $(PREFIX)/lib
+	install -pm 644 *.h $(PREFIX)/include/sasairc
+
+.PHONY:	all	\
+	install	\
+	clean
