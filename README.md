@@ -3,16 +3,10 @@ komono
 
 小物（こもの）って言葉、可愛くありませんか？
 
-### include
-お得なC言語用ライブラリ詰め合わせパック	
-`make`すると共有ライブラリができます
-```shellsession
-% cd include
-% make
-```
-
 ### body
+
 `head(1)`と`tail(1)`があるのに、`body`が無いなんておかしい（おかしくない）ので作ったやつ
+
 ```shellsession
 % gcc body.c -o body
 % ./body -v -n 24 ~/Documents/horagai
@@ -44,15 +38,19 @@ komono
 ```
 
 ### bsodnt4
+
 WindowsNT Workstation 4.0のOS Loader直後からBSODが出るまでを再現したやつ	
 ncursesが必要です
+
 ```shellsession
 % gcc bsodnt4.c -lncurses -o bsodnt4
 ```
 
 ### uescape
+
 `stdin`から読み込んだ文字列のUnicodeのエスケープシーケンスを吐くやつ
 glibが必要です
+
 ```shellsession
 % gcc uescape.c `pkg-config --cflags --libs glib-2.0` -o uescape
 % headtail --pretty ~/Documents/sihnyk4
