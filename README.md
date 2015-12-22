@@ -84,3 +84,19 @@ ko↑ko↓
 \u79c1\u306f\u3088\u3044\u3067\u3059\uff01\u5230\u7740\u306f\u3042\u306a\u305f\u3067\u3059\uff01\u80f8\u306e\u672c\u6d41\uff1a\u305d\u3057\u3066\u3001\u80f8\u306e\u4e0a\u3067\uff01
 \u80f8\u306e\u4e0a\u3067\u52d5\u304d\u307e\u3059
 ```
+
+### nyancat
+
+`stdin`から読み込んだ文字列を`n_cipher`でエンコードし、任意ホストの任意TCPポートへなげるやつ。	
+libncipherが必要です。
+
+```shellsession
+% gcc nyancat.c -o nyancat -lncipher
+% renge -l | body | ./nyancat -p 2048 localhost &
+[1] 14830 14831 14832
+% nc localhost 2048
+んにぱ〜ゃすぱ〜んにゃ〜ゃゃん〜ぱすすゃにん〜ぱすすんにに〜ぱすすにゃぱ〜ぱすぱすゃゃ〜ぱすすんにに〜
+:
+:
+:
+```
