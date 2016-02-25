@@ -240,7 +240,7 @@ int exec_cmd(cmd_t* cmd, int in_fd)
     int     status  = 0,
             fd[2]   = {0};
 
-    pid_t   pid     = 0;
+    pid_t   pid;
 
     /*
      * buildin command
@@ -263,13 +263,13 @@ int exec_cmd(cmd_t* cmd, int in_fd)
             redirect(in_fd, STDIN_FILENO);
             if (cmd->io != NULL) {
                 if (file_redirect(cmd) < 0)
-                    exit(1);
+                    exit(0);
             }
             execvp(cmd->args[0], cmd->args);
             fprintf(stderr, "%s: command not found: %s\n",
                     PROGNAME, cmd->args[0]);
 
-            exit(1);
+            exit(0);
         }
     }
 
@@ -296,6 +296,7 @@ int exec_cmd(cmd_t* cmd, int in_fd)
             default:
                 if (waitpid(pid, &status, 0) < 0)
                     perror("waitpid");
+
                 if (cmd->next != NULL) {
                     /*
                      * 1. &&
@@ -306,17 +307,16 @@ int exec_cmd(cmd_t* cmd, int in_fd)
                         exec_cmd(cmd->next, STDIN_FILENO);
                     } else if (WEXITSTATUS(status) != 0 && cmd->type == TOR) {
                         exec_cmd(cmd->next, STDIN_FILENO);
-                    } else if (cmd->type == TPAREN) {
+                    } else if (cmd->type == TPAREN || cmd->type == TCOM) {
                         exec_cmd(cmd->next, STDIN_FILENO);
                     }
                 }
-
                 return 0;
         }
     }
 
     /*
-     * pipe (master)
+     * pipe
      */
     switch (fork()) {
         case    -1:
@@ -325,50 +325,44 @@ int exec_cmd(cmd_t* cmd, int in_fd)
 
             return errno;
         case    0:
-            break;
+            if (pipe(fd) < 0) {
+                fprintf(stderr, "%s: pipe() failure\n",
+                        PROGNAME);
+
+                exit(errno);
+            }
+            switch (fork()) {
+                case    -1:
+                    fprintf(stderr, "%s: fork() failure\n",
+                            PROGNAME);
+
+                    exit(1);
+                case    0:
+                    close(fd[0]);
+                    redirect(in_fd, STDIN_FILENO);
+                    redirect(fd[1], STDOUT_FILENO);
+                    execvp(cmd->args[0], cmd->args);
+                    fprintf(stderr, "%s: command not found: %s\n",
+                            PROGNAME, cmd->args[0]);
+
+                    exit(1);
+                default:
+                    close(fd[1]);
+                    close(in_fd);
+                    if (cmd->next != NULL)
+                        exec_cmd(cmd->next, fd[0]);
+
+                    exit(0);
+            }
         default:
             mwait();
             while (cmd->next != NULL && cmd->type == TPIPE)
                 cmd = cmd->next;
-            if (cmd->next != NULL) {
-                exec_cmd(cmd->next, STDIN_FILENO);
-            }
-            return 0;
-    }
-
-    /*
-     * pipe (slave)
-     */
-    if (pipe(fd) < 0) {
-        fprintf(stderr, "%s: pipe() failure\n",
-                PROGNAME);
-
-        return errno;
-    }
-
-    switch (fork()) {
-        case    -1:
-            fprintf(stderr, "%s: fork() failure\n",
-                    PROGNAME);
-
-            return errno;
-        case    0:
-            close(fd[0]);
-            redirect(in_fd, STDIN_FILENO);
-            redirect(fd[1], STDOUT_FILENO);
-            execvp(cmd->args[0], cmd->args);
-            fprintf(stderr, "%s: command not found: %s\n",
-                    PROGNAME, cmd->args[0]);
-            exit(errno);
-        default:
-            close(fd[1]);
-            close(in_fd);
-            wait(&status);
             if (cmd->next != NULL)
-                exec_cmd(cmd->next, fd[0]);
+                exec_cmd(cmd->next, STDIN_FILENO);
     }
 
-    exit(0);
+    return 0;
 }
 
 void redirect(int oldfd, int newfd)
