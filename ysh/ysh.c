@@ -67,7 +67,7 @@ int parse_cmdline(char* str, cmd_t** dest_cmd, cmd_t** dest_start)
                 str[head] == '<'    ||
                 str[head] == '\n') {
             if ((tmp = (char*)
-                        malloc(sizeof(char) * (head - tail))) == NULL)
+                        malloc(sizeof(char) * (head - tail + 1))) == NULL)
                 goto ERR;
 
             memcpy(tmp, str + tail, head - tail);
@@ -310,6 +310,7 @@ int exec_cmd(cmd_t* cmd, int in_fd)
                         exec_cmd(cmd->next, STDIN_FILENO);
                     }
                 }
+
                 return 0;
         }
     }
