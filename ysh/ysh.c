@@ -1,3 +1,7 @@
+/*
+ * ysh.c
+ */
+
 #include "./ysh.h"
 #include "./buildin.h"
 #include "./config.h"
@@ -10,8 +14,29 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <ctype.h>
-#include <wait.h>
 #include <errno.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+
+int main(int argc, char* argv[])
+{
+    char    buf[MAXLEN];
+
+    cmd_t*  cmd     = NULL,
+         *  start   = NULL;
+
+    while (1) {
+        memset(buf, '\0', MAXLEN);
+        fprintf(stdout, "%s", PROMPT);
+        fgets(buf, MAXLEN, stdin);
+        if (parse_cmdline(buf, &cmd, &start) < 0)
+            continue;
+        exec_cmd(cmd, STDIN_FILENO);
+        release_cmd_t(start);
+    }
+
+    return 1;
+}
 
 int parse_cmdline(char* str, cmd_t** dest_cmd, cmd_t** dest_start)
 {
@@ -29,6 +54,7 @@ int parse_cmdline(char* str, cmd_t** dest_cmd, cmd_t** dest_start)
         return -1;
 
     start = cmd;
+    cmd->num = 1;
     cmd->io = NULL;
     cmd->next = NULL;
     cmd->prev = NULL;
@@ -50,6 +76,9 @@ int parse_cmdline(char* str, cmd_t** dest_cmd, cmd_t** dest_start)
             cmd->args = str_to_args(tmp);
             free(tmp);
 
+            /*
+             * io token
+             */
             if (str[head] == '>' || str[head] == '<') {
                 if ((cmd->io = (io_t*)
                             malloc(sizeof(io_t))) == NULL)
@@ -90,7 +119,7 @@ int parse_cmdline(char* str, cmd_t** dest_cmd, cmd_t** dest_start)
 
                 memcpy(cmd->io->io_name, str + head, len);
                 cmd->io->io_name[len] = '\0';
-                fprintf(stdout, "io_name = %s\n", cmd->io->io_name);
+//              fprintf(stdout, "io_name = %s\n", cmd->io->io_name);
                 head += len;
             }
             if (str[head] == '\0' || str[head] == '\n') {
@@ -98,6 +127,9 @@ int parse_cmdline(char* str, cmd_t** dest_cmd, cmd_t** dest_start)
                 break;
             }
 
+            /*
+             * generic token
+             */
             switch (str[head]) {
                 case    ';':
                     cmd->type = TPAREN;
@@ -120,11 +152,16 @@ int parse_cmdline(char* str, cmd_t** dest_cmd, cmd_t** dest_start)
                     break;
             }
             head++;
+            if (str[head] == '\0' || str[head] == '\n') {
+                cmd->type = TCOM;
+                break;
+            }
             tail = head;
             if ((cmd->next = (cmd_t*)
                         malloc(sizeof(cmd_t))) == NULL)
                 goto ERR;
 
+            cmd->next->num = cmd->num + 1;
             cmd->next->prev = cmd;
             cmd = cmd->next;
             cmd->next = NULL;
@@ -149,15 +186,6 @@ ERR:
 
 }
 
-void redirect(int oldfd, int newfd)
-{
-    if (oldfd != newfd)
-        if (dup2(oldfd, newfd) == -1)
-            close(oldfd);
-
-    return;
-}
-
 int file_redirect(cmd_t* cmd)
 {
     int fd  = 0;
@@ -165,7 +193,8 @@ int file_redirect(cmd_t* cmd)
     switch (cmd->io->io_flag) {
         case    IOREAD:
         case    IOHERE:
-            if ((fd = open(cmd->io->io_name, O_RDONLY)) < 0) {
+            if ((fd = open(cmd->io->io_name,
+                            O_RDONLY)) < 0) {
                 perror("ysh: fopen");
                 close(fd);
 
@@ -175,7 +204,10 @@ int file_redirect(cmd_t* cmd)
             dup2(fd, 0);
             break;
         case    IOWRITE:
-            if ((fd = open(cmd->io->io_name, O_WRONLY | O_CREAT | O_TRUNC, 0666)) < 0) {
+            if ((fd = open(cmd->io->io_name,
+                            O_WRONLY    |
+                            O_CREAT     |
+                            O_TRUNC, 0666)) < 0) {
                 perror("ysh: fopen");
                 close(fd);
 
@@ -185,7 +217,10 @@ int file_redirect(cmd_t* cmd)
             dup2(fd, 1);
             break;
         case    IOCAT:
-            if ((fd = open(cmd->io->io_name, O_WRONLY | O_CREAT | O_APPEND, 0666)) < 0) {
+            if ((fd = open(cmd->io->io_name,
+                            O_WRONLY    |
+                            O_CREAT     |
+                            O_APPEND, 0666)) < 0) {
                 perror("ysh: fopen");
                 close(fd);
 
@@ -202,8 +237,8 @@ int file_redirect(cmd_t* cmd)
 
 int exec_cmd(cmd_t* cmd, int in_fd)
 {
-    int     fd[2]   = {0},
-            status  = 0;
+    int     status  = 0,
+            fd[2]   = {0};
 
     pid_t   pid     = 0;
 
@@ -224,7 +259,7 @@ int exec_cmd(cmd_t* cmd, int in_fd)
      * pipe (last)
      */
     if (cmd->prev != NULL) {
-        if (cmd->prev->type == TPIPE && cmd->next == NULL) {
+        if (cmd->prev->type == TPIPE && cmd->type != TPIPE) {
             redirect(in_fd, STDIN_FILENO);
             if (cmd->io != NULL) {
                 if (file_redirect(cmd) < 0)
@@ -234,7 +269,7 @@ int exec_cmd(cmd_t* cmd, int in_fd)
             fprintf(stderr, "%s: command not found: %s\n",
                     PROGNAME, cmd->args[0]);
 
-            exit(errno);
+            exit(1);
         }
     }
 
@@ -253,23 +288,34 @@ int exec_cmd(cmd_t* cmd, int in_fd)
                     if (file_redirect(cmd) < 0)
                         exit(1);
                 }
-
                 execvp(cmd->args[0], cmd->args);
                 fprintf(stderr, "%s: command not found: %s\n",
                         PROGNAME, cmd->args[0]);
 
                 exit(errno);
             default:
-                wait(&status);
-                if (cmd->next != NULL)
-                    exec_cmd(cmd->next, STDIN_FILENO);
-
+                if (waitpid(pid, &status, 0) < 0)
+                    perror("waitpid");
+                if (cmd->next != NULL) {
+                    /*
+                     * 1. &&
+                     * 2. ||
+                     * 3. ;
+                     */
+                    if (WEXITSTATUS(status) == 0 && cmd->type == TAND) {
+                        exec_cmd(cmd->next, STDIN_FILENO);
+                    } else if (WEXITSTATUS(status) != 0 && cmd->type == TOR) {
+                        exec_cmd(cmd->next, STDIN_FILENO);
+                    } else if (cmd->type == TPAREN) {
+                        exec_cmd(cmd->next, STDIN_FILENO);
+                    }
+                }
                 return 0;
         }
     }
 
     /*
-     * pipe
+     * pipe (master)
      */
     switch (fork()) {
         case    -1:
@@ -280,9 +326,18 @@ int exec_cmd(cmd_t* cmd, int in_fd)
         case    0:
             break;
         default:
-            wait(&status);
+            mwait();
+            while (cmd->next != NULL && cmd->type == TPIPE)
+                cmd = cmd->next;
+            if (cmd->next != NULL) {
+                exec_cmd(cmd->next, STDIN_FILENO);
+            }
             return 0;
     }
+
+    /*
+     * pipe (slave)
+     */
     if (pipe(fd) < 0) {
         fprintf(stderr, "%s: pipe() failure\n",
                 PROGNAME);
@@ -315,6 +370,33 @@ int exec_cmd(cmd_t* cmd, int in_fd)
     exit(0);
 }
 
+void redirect(int oldfd, int newfd)
+{
+    if (oldfd != newfd)
+        if (dup2(oldfd, newfd) == -1)
+            close(oldfd);
+
+    return;
+}
+
+void mwait(void)
+{
+    int     status  = 0;
+
+    pid_t   pid     = 0;
+
+    while (1) {
+        if ((pid = wait(&status)) == -1) {
+            if (ECHILD == errno)
+                break;
+            else if (EINTR == errno)
+                continue;
+        }
+    }
+
+    return;
+}
+
 void release_cmd_t(cmd_t* cmd)
 {
     cmd_t*  tmp = NULL;
@@ -333,24 +415,4 @@ void release_cmd_t(cmd_t* cmd)
     }
 
     return;
-}
-
-int main(int argc, char* argv[])
-{
-    char    buf[MAXLEN];
-
-    cmd_t*  cmd     = NULL,
-         *  start   = NULL;
-
-    while (1) {
-        memset(buf, '\0', MAXLEN);
-        fprintf(stdout, "%s", PROMPT);
-        fgets(buf, MAXLEN, stdin);
-        if (parse_cmdline(buf, &cmd, &start) < 0)
-            continue;
-        exec_cmd(cmd, STDIN_FILENO);
-        release_cmd_t(start);
-    }
-
-    return 1;
 }

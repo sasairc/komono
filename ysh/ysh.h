@@ -1,3 +1,7 @@
+/*
+ * ysh.h
+ */
+
 #ifndef YSH_H
 #define YSH_H
 
@@ -18,6 +22,7 @@ typedef struct IO_T {
 } io_t;
 
 typedef struct CMD_T {
+    int             num;
     int             type;
     char**          args;
     struct IO_T*    io;
@@ -26,9 +31,10 @@ typedef struct CMD_T {
 } cmd_t;
 
 extern int parse_cmdline(char* str, cmd_t** dest_cmd, cmd_t** dest_start);
-extern void redirect(int oldfd, int newfd);
 extern int file_redirect(cmd_t* cmd);
 extern int exec_cmd(cmd_t* cmd, int in_fd);
+extern void redirect(int oldfd, int newfd);
+extern void mwait(void);
 extern void release_cmd_t(cmd_t* cmd);
 
 #endif
