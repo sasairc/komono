@@ -240,7 +240,7 @@ int exec_cmd(cmd_t* cmd, int in_fd)
     int     status  = 0,
             fd[2]   = {0};
 
-    pid_t   pid;
+    pid_t   pid     = 0;
 
     /*
      * buildin command
@@ -318,6 +318,10 @@ int exec_cmd(cmd_t* cmd, int in_fd)
     /*
      * pipe
      */
+    if (cmd->prev != NULL) {
+        if (cmd->prev->type != TPIPE)
+            pid = getpid();
+    }
     switch (fork()) {
         case    -1:
             fprintf(stderr, "%s: fork() failure",
@@ -356,10 +360,14 @@ int exec_cmd(cmd_t* cmd, int in_fd)
             }
         default:
             mwait();
-            while (cmd->next != NULL && cmd->type == TPIPE)
-                cmd = cmd->next;
-            if (cmd->next != NULL)
-                exec_cmd(cmd->next, STDIN_FILENO);
+            if (pid == getpid()) {
+                while (cmd->next != NULL && cmd->type == TPIPE)
+                    cmd = cmd->next;
+                if (cmd->next != NULL)
+                    exec_cmd(cmd->next, STDIN_FILENO);
+            } else {
+                exit(0);
+            }
     }
 
     return 0;
