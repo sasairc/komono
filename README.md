@@ -100,3 +100,25 @@ libncipherが必要です。
 :
 :
 ```
+
+### rsync_mirroring
+
+`rsync`と`cron`での簡易的な時間差ミラーリング。適当なスケジュールで登録して下さい。
+
+#### options
+```shellsession
+SRC=(DIR ..)	対象とするディレクトリ
+DEST=(DIR ..)	複製先のマウントポイント SRCに基づきディレクトリ階層は維持される
+RSYNC_OPT=STR	rsyncのコマンドラインオプション
+LOGFILE=PATH	ログファイルのパス
+```
+
+#### example
+
+```shellsession
+SRC=("/usr/src" "/var" "/tmp" "/home")	
+DEST=("/mnt/backup_1" "/mnt/backup_2" "/mnt/backup_3")
+RSYNC="/usr/bin/rsync"
+RSYNC_OPT="-av --exclude lost+found"
+LOGFILE="/var/log/rsync_backup.log"
+```
