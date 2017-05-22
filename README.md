@@ -3,6 +3,20 @@ komono
 
 小物（こもの）って言葉、可愛くありませんか？
 
+### mbhead
+
+`head(1)`の`-c, --byte`を`--characters`に置き換えたもの。マルチバイト文字対応なのです。
+
+```shellsession
+% gcc mbhead.c -o mbhead
+% yasuna -n 4337
+病院に向かう途中の犬の散歩！ほら！こっち来い！
+% yasuna -n 4337 | heac -c 10
+病院にå
+% yasuna -n 4337 | ./mbhead -c 10
+病院に向かう途中の犬
+```
+
 ### body
 
 `head(1)`と`tail(1)`があるのに、`body`が無いなんておかしい（おかしくない）ので作ったやつ
