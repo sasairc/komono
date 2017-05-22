@@ -197,13 +197,13 @@ int p_count_file_lines(char** buf)
 char** p_read_file_char(int t_lines, size_t t_length, FILE* fp)
 {
     int     lines   = t_lines,
-            length  = t_length,
-            i       = 0,
+            length  = t_length;
+    int     i       = 0,
             x       = 0,
-            y       = 0,
-            c       = 0;
-    char*   str     = (char*)malloc(sizeof(char) * t_length),   /* allocate temporary array */
-        **  buf     = (char**)malloc(sizeof(char*) * t_lines);  /* allocate array of Y coordinate */
+            y       = 0;
+    char    c;
+    char*   str     = (char*)malloc(sizeof(char) * t_length);   /* allocate temporary array */
+    char**  buf     = (char**)malloc(sizeof(char*) * t_lines);  /* allocate array of Y coordinate */
 
     if (str == NULL || buf == NULL) {
 
@@ -219,6 +219,7 @@ char** p_read_file_char(int t_lines, size_t t_length, FILE* fp)
         switch (c) {
             case    '\n':
                 str[x] = c;
+
                 /* reallocate array of Y coordinate */
                 if (y == (lines - 1)) {
                     lines += t_lines;
@@ -228,14 +229,12 @@ char** p_read_file_char(int t_lines, size_t t_length, FILE* fp)
                     }
                 }
                 /* allocate array for X coordinate */
-                if ((buf[y] = (char*)malloc(sizeof(char) * (strlen(str) + 1))) == NULL) {
-
-                    goto ERR;
-                }
+                buf[y] = (char*)malloc(sizeof(char) * (strlen(str) + 1));
                 strcpy(buf[y], str);    /* copy, str to buffer */
                 for (i = 0; i < length; i++) {
                     str[i] = '\0';      /* refresh temporary array */
                 }
+
                 x = 0;
                 y++;
                 break;
@@ -248,17 +247,11 @@ char** p_read_file_char(int t_lines, size_t t_length, FILE* fp)
                         goto ERR;
                     }
                 }
+
                 str[x] = c;
                 x++;
                 continue;
         }
-    }
-    /* no data */
-    if (x == 0 && y == 0) {
-        buf[y] = NULL;
-        free(str);
-
-        return buf;
     }
 
     if (str[0] != '\0') {
@@ -270,15 +263,11 @@ char** p_read_file_char(int t_lines, size_t t_length, FILE* fp)
                 goto ERR;
             }
         }
-        if ((buf[y] = (char*)malloc(sizeof(char) * (strlen(str) + 1))) == NULL) {
-
-            goto ERR;
-        }
+        buf[y] = (char*)malloc(sizeof(char) * (strlen(str) + 1));
         strcpy(buf[y], str);
         y++;
     }
     buf[y] = NULL;
-    free(str);
 
     return buf;
 

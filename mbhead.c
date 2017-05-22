@@ -17,7 +17,17 @@
 #include <getopt.h>
 
 #define PROGNAME    "mbhead"
-#define N_DEFAULT   10
+#define AUTHOR      "sasairc"
+#define MAIL_TO     "sasairc@ssiserver.moe.hm"
+
+#define N_DEFAULT   10      /* default put lines */
+
+int print_usage(void);
+int print_version(void);
+int strisdigit(char* str);
+int get_character_size(unsigned char code);
+void do_file_chars(FILE* fp, int n);
+void do_file_lines(FILE* fp, int n);
 
 int print_usage(void)
 {
@@ -28,11 +38,22 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 \n\
   -c,  --characters=INT      print the first INT characters of each file\n\
   -l,  --lines=INT           print the first INT lines instead of the first %d\n\
-  -q,  --quiet               never print headers giving file names\n\
+  -q,  --quiet, --silent     never print headers giving file names\n\
   -v,  --verbose             always print headers giving file names\n\
 \n\
        --help                display this help and exit\n\
-", PROGNAME, N_DEFAULT);
+       --version             output version infomation and exit\n\
+\n\
+Report %s bugs to %s <%s>\n\
+" , PROGNAME, N_DEFAULT, PROGNAME, AUTHOR, MAIL_TO);
+
+    exit(0);
+}
+
+int print_version(void)
+{
+    fprintf(stdout, "%sのバージョン？んなものは無い。\n",
+            PROGNAME);
 
     exit(0);
 }
@@ -59,11 +80,24 @@ int get_character_size(unsigned char code)
     return byte;
 }
 
+int strisdigit(char* str)
+{
+    char*   p   = str;
+
+    while (*p != '\0') {
+        if (!isdigit(*p))
+            return -1;
+        p++;
+    }
+
+    return 0;
+}
+
 void do_file_chars(FILE* fp, int n)
 {
-    int     i       = 0,
-            s       = 0,
-            c       = 0;
+    int     c       = 0;
+
+    size_t  s       = 0;
 
     char    buf[6]  = {'\0'};
 
@@ -96,20 +130,8 @@ void do_file_lines(FILE* fp, int n)
                 putchar(c);
         }
     }
+
     return;
-}
-
-int strisdigit(char* str)
-{
-    char*   p   = str;
-
-    while (*p != '\0') {
-        if (!isdigit(*p))
-            return -1;
-        p++;
-    }
-
-    return 0;
 }
 
 int main(int argc, char* argv[])
@@ -129,7 +151,9 @@ int main(int argc, char* argv[])
         {"lines",       required_argument,  NULL,   'n'},
         {"quiet",       no_argument,        NULL,   'q'},
         {"verbose",     no_argument,        NULL,   'v'},
-        {"help",        no_argument,        NULL,    0 },
+        {"silent",      no_argument,        NULL,    0 },
+        {"help",        no_argument,        NULL,    1 },
+        {"version",     no_argument,        NULL,    2 },
         {0, 0, 0, 0},
     };
 
@@ -154,13 +178,16 @@ int main(int argc, char* argv[])
                 proc = do_file_lines;
                 break;
             case    'q':
+            case    0:
                 vflag = 0;
                 break;
             case    'v':
                 vflag = 1;
                 break;
-            case    0:
+            case    1:
                 print_usage();
+            case    2:
+                print_version();
             case    '?':
                 return -1;
         }
