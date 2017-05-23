@@ -21,13 +21,15 @@
 #define MAIL_TO     "sasairc@ssiserver.moe.hm"
 
 #define N_DEFAULT   10      /* default put lines */
+#define M_PIPE      (1 << 1)
+#define M_VERBOSE   (1 << 2)
 
 int print_usage(void);
 int print_version(void);
 int strisdigit(char* str);
 int get_character_size(unsigned char code);
-void do_file_chars(FILE* fp, int n);
-void do_file_lines(FILE* fp, int n);
+void do_file_chars(FILE* fp, int n, short flag);
+void do_file_lines(FILE* fp, int n, short flag);
 
 int print_usage(void)
 {
@@ -38,6 +40,7 @@ Mandatory arguments to long options are mandatory for short options too.\n\
 \n\
   -c,  --characters=INT      print the first INT characters of each file\n\
   -l,  --lines=INT           print the first INT lines instead of the first %d\n\
+  -p,  --pipe                print the first characters/lines, after append line-feed\n\
   -q,  --quiet, --silent     never print headers giving file names\n\
   -v,  --verbose             always print headers giving file names\n\
 \n\
@@ -93,7 +96,7 @@ int strisdigit(char* str)
     return 0;
 }
 
-void do_file_chars(FILE* fp, int n)
+void do_file_chars(FILE* fp, int n, short flag)
 {
     int     c       = 0;
 
@@ -104,7 +107,7 @@ void do_file_chars(FILE* fp, int n)
     while ((c = fgetc(fp)) != EOF && n > 0) {
         if ((s = get_character_size(c) - 1) > 0) {
             buf[0] = c;
-            fread(buf + 1, sizeof(char), s, fp);
+            fread(buf + 1, sizeof(char), s , fp);
             fprintf(stdout, "%s", buf);
             memset(buf, '\0', sizeof(buf));
         } else {
@@ -112,11 +115,14 @@ void do_file_chars(FILE* fp, int n)
         }
         n--;
     }
+    /* put LF */
+    if (flag & M_PIPE)
+        putchar(0x0A);
 
     return;
 }
 
-void do_file_lines(FILE* fp, int n)
+void do_file_lines(FILE* fp, int n, short flag)
 {
     int     c   = 0;
 
@@ -140,24 +146,25 @@ int main(int argc, char* argv[])
             res     = 0,
             index   = 0;
 
-    short   vflag   = 0;
+    short   flag    = 0;
 
     FILE*   fp      = NULL;
 
-    void    (*proc)(FILE* fp, int n) = do_file_lines;
+    void    (*proc)(FILE* fp, int n, short flag) = do_file_lines;
 
     struct option opts[] = {
         {"characters",  required_argument,  NULL,   'c'},
         {"lines",       required_argument,  NULL,   'n'},
         {"quiet",       no_argument,        NULL,   'q'},
         {"verbose",     no_argument,        NULL,   'v'},
+        {"pipe",        no_argument,        NULL,   'p'},
         {"silent",      no_argument,        NULL,    0 },
         {"help",        no_argument,        NULL,    1 },
         {"version",     no_argument,        NULL,    2 },
         {0, 0, 0, 0},
     };
 
-    while ((res = getopt_long(argc, argv, "c:n:qv", opts, &index)) != -1) {
+    while ((res = getopt_long(argc, argv, "c:n:vqp", opts, &index)) != -1) {
         switch (res) {
             case    'c':
                 if (strisdigit(optarg) < 0) {
@@ -177,12 +184,15 @@ int main(int argc, char* argv[])
                 n = atoi(optarg);
                 proc = do_file_lines;
                 break;
+            case    'v':
+                flag |= M_VERBOSE;
+                break;
             case    'q':
             case    0:
-                vflag = 0;
+                flag &= ~M_VERBOSE;
                 break;
-            case    'v':
-                vflag = 1;
+            case    'p':
+                flag |= M_PIPE;
                 break;
             case    1:
                 print_usage();
@@ -201,19 +211,18 @@ int main(int argc, char* argv[])
                         PROGNAME, *(argv + optind), strerror(errno));
                 res = errno; goto RELEASE;
             }
-            if (vflag == 1)
+            if (flag & M_VERBOSE)
                 fprintf(stdout, "==> %s <==\n",
                         *(argv + optind));
-            proc(fp, n);
-            if (vflag == 1)
-                fprintf(stdout, "\n\n",
-                        *(argv + optind));
+            proc(fp, n, flag);
             fclose(fp);
             fp = NULL;
+            if ((optind + 1 < argc) && flag & M_VERBOSE)
+                putchar('\n');
             optind++;
         }
     } else {
-        proc(stdin, n);
+        proc(stdin, n, flag);
     }
 
 RELEASE:
