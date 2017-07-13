@@ -4,19 +4,22 @@
 #
 
 SRC=("/usr/src" "/var" "/tmp" "/home")
-DEST=("/mnt/backup_1" "/mnt/backup_2" "/mnt/backup_3")
+DEST=("/mnt/backup_1" "/mnt/backup_2" "/mnt/backup_3" "/mnt/backup_4")
 RSYNC="/usr/bin/rsync"
 RSYNC_OPT="-av --delete --exclude lost+found"
 LOGFILE="/var/log/rsync_backup.log"
 
-# remove /var/cache/apt/archives
-#apt-get clean
+# check process
+PID=$(pgrep -d ', ' -f 'rsync\s(.+)')   &&  \
+    echo "$(LANG=C date): ${RSYNC} [${PID}] is already running." >> "${LOGFILE}"    && \
+    exit 0
 
+# exec rsync
 for ((i = 0; i < ${#SRC[@]}; i++)); do
     for ((j = 0; j < ${#DEST[@]}; j++)); do
-        $RSYNC $RSYNC_OPT "${SRC[$i]}/" "${DEST[$j]}${SRC[$i]}/" 2>> "$LOGFILE"
+        $RSYNC $RSYNC_OPT "${SRC[$i]}/" "${DEST[$j]}${SRC[$i]}/" 2>> "${LOGFILE}"
         test $? -eq 0   && \
-            echo "$(LANG=C date): $RSYNC $RSYNC_OPT ${SRC[$i]}/ ${DEST[$j]}${SRC[$i]}/: done." >> "$LOGFILE"    ||  \
-            echo "$(LANG=C date): $RSYNC $RSYNC_OPT ${SRC[$i]}/ ${DEST[$j]}${SRC[$i]}/: failure." >> "$LOGFILE"
+            echo "$(LANG=C date): $RSYNC $RSYNC_OPT ${SRC[$i]}/ ${DEST[$j]}${SRC[$i]}/: done." >> "${LOGFILE}"    || \
+            echo "$(LANG=C date): $RSYNC $RSYNC_OPT ${SRC[$i]}/ ${DEST[$j]}${SRC[$i]}/: failure." >> "${LOGFILE}"
     done
 done

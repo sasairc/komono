@@ -133,6 +133,6 @@ LOGFILE=PATH	ログファイルのパス
 SRC=("/usr/src" "/var" "/tmp" "/home")	
 DEST=("/mnt/backup_1" "/mnt/backup_2" "/mnt/backup_3")
 RSYNC="/usr/bin/rsync"
-RSYNC_OPT="-av --exclude lost+found"
+RSYNC_OPT="-av --delete --exclude lost+found"
 LOGFILE="/var/log/rsync_backup.log"
 ```
