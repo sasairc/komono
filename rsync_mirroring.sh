@@ -4,9 +4,9 @@
 #
 
 SRC=("/usr/src" "/var" "/tmp" "/home")
-DEST=("/mnt/backup_1" "/mnt/backup_2" "/mnt/backup_3" "/mnt/backup_4")
+DEST=("/mnt/backup_1" "/mnt/backup_2" "/mnt/backup_3" "/mnt/backup_4" "/mnt/backup_5")
 RSYNC="/usr/bin/rsync"
-RSYNC_OPT="-av --delete --exclude lost+found"
+RSYNC_OPT="-av --delete --exclude=lost+found --exclude=swap.img"
 LOGFILE="/var/log/rsync_backup.log"
 
 # check process
