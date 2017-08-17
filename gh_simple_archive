@@ -1,0 +1,10 @@
+#!/bin/bash
+
+USER="sasairc"
+PKGNAME="${1}$(echo -n ${2} | sed 's/^[^0-9]*/-/g')"
+
+echo "create tarball ${PKGNAME}.tar.gz"
+git clone --recursive -b ${2} https://github.com/${USER}/${1}.git ${PKGNAME}    && \
+        rm -rf ${PKGNAME}/.git                                                  && \
+        tar zcvf ${PKGNAME}.tar.gz ${PKGNAME} > /dev/null                       && \
+        rm -r ${PKGNAME}
