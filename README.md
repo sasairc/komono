@@ -120,11 +120,13 @@ libncipherが必要です。
 `rsync`と`cron`での簡易的な時間差ミラーリング。適当なスケジュールで登録して下さい。
 
 #### options
+
 ```shellsession
-SRC=(DIR ..)	対象とするディレクトリ
-DEST=(DIR ..)	複製先のマウントポイント SRCに基づきディレクトリ階層は維持される
-RSYNC_OPT=STR	rsyncのコマンドラインオプション
-LOGFILE=PATH	ログファイルのパス
+SRC=(DIR ..)    # 対象とするディレクトリ
+DEST=(DIR ..)   # 複製先のマウントポイント SRCに基づきディレクトリ階層は維持される
+RSYNC_OPT=STR	  # rsyncのコマンドラインオプション
+RSYNC_NICE=STR  # niceですね〜 niceですね〜
+LOGFILE=PATH    # ログファイルのパス
 ```
 
 #### example
