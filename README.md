@@ -3,6 +3,14 @@ komono
 
 小物（こもの）って言葉、可愛くありませんか？
 
+### waiting
+
+チョット待ってね。
+
+```
+% gcc -O2 -Wall -Wextra waiting.c -lbenly_spinner -lbenly_string -o waiting
+```
+
 ### mbhead
 
 `head(1)`の`-c, --byte`を`--characters`に置き換えたもの。マルチバイト文字対応なのです。
