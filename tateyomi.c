@@ -13,70 +13,33 @@
 
 #define DEFAULT_ROW_SIZE    32
 
+static int read_file(FILE* fp, STRING*** s, size_t* rows, size_t* cols);
+static int equalize(STRING** s, size_t rows, size_t cols);
+static int to_char_arr2(STRING** s1, char**** s2, size_t rows);
+static void tateyomi(char*** const s, size_t rows, size_t cols);
 static void release(STRING** s1, char*** s2, size_t rows);
 
 int main(void)
 {
     int         status  = 0;
 
-    size_t      i       = 0,
-                j       = 0,
-                rows    = 0,
-                cols    = 0,
-                r_size  = DEFAULT_ROW_SIZE;
+    size_t      rows    = 0,
+                cols    = 0;
 
     STRING**    s1      = NULL;
 
     char***     s2      = NULL;
 
-    if ((s1 = (STRING**)
-                malloc(sizeof(STRING*) * r_size)) == NULL) {
+    if (read_file(stdin, &s1, &rows, &cols) < 0) {
         status = 1; goto ERR;
     }
-    while (fgetline(stdin, &s1[rows]) != EOF) {
-        s1[rows]->chomp(&s1[rows]);
-        if ((i = s1[rows]->mblen(s1[rows])) > cols)
-            cols = i;
-        if (WINVALIDCHAR(string_errno)) {
-            status = 2; goto ERR;
-        }
-        if (rows >= (r_size - 1)) {
-            r_size += DEFAULT_ROW_SIZE;
-            if ((s1 = (STRING**)
-                        realloc(s1, sizeof(STRING*) * r_size)) == NULL) {
-                status = 3; goto ERR;
-            }
-        }
-        rows++;
+    if (equalize(s1, rows, cols) < 0) {
+        status = 2; goto ERR;
     }
-    i = 0;
-    while (i < rows) {
-        j = s1[i]->mblen(s1[i]);
-        while (j < cols) {
-            s1[i]->append(&s1[i], "　");
-            j++;
-        }
-        i++;
+    if (to_char_arr2(s1, &s2, rows) < 0) {
+        status = 3; goto ERR;
     }
-    if ((s2 = (char***)
-                malloc(sizeof(char**) * rows)) == NULL) {
-        status = -4; goto ERR;
-    }
-    i = 0;
-    while (i < rows) {
-        s1[i]->to_char_arr(s1[i], s2 + i);
-        i++;
-    }
-    i = 0;
-    while (i < cols && (j = rows)) {
-        do {
-            j--;
-            fprintf(stdout, "%s",
-                    *(*(s2 + j) + i));
-        } while (j);
-        putchar('\n');
-        i++;
-    }
+    tateyomi(s2, rows, cols);
     release(s1, s2, rows);
 
     return 0;
@@ -87,6 +50,93 @@ ERR:
     release(s1, s2, rows);
 
     return status;
+}
+
+static
+int read_file(FILE* fp, STRING*** s, size_t* rows, size_t* cols)
+{
+    size_t  n       = 0,
+            r_size  = DEFAULT_ROW_SIZE;
+
+    if ((*s = (STRING**)
+                malloc(sizeof(STRING*) * r_size)) == NULL)
+        return -1;
+    while (fgetline(fp, &(*s)[*rows]) != EOF) {
+        (*s)[*rows]->chomp(&(*s)[*rows]);
+        if ((n = (*s)[*rows]->mblen((*s)[*rows])) > *cols)
+            *cols = n;
+        if (WINVALIDCHAR(string_errno)) {
+            (*s)[*rows]->release((*s)[*rows]);
+            return -2;
+        }
+        if (*rows >= (r_size - 1)) {
+            r_size += DEFAULT_ROW_SIZE;
+            if ((*s = (STRING**)
+                        realloc(*s, sizeof(STRING*) * r_size)) == NULL)
+                return -3;
+        }
+        (*rows)++;
+    }
+
+    return 0;
+}
+
+static
+int equalize(STRING** s, size_t rows, size_t cols)
+{
+    size_t  i   = 0,
+            j   = 0;
+
+    while (i < rows) {
+        j = s[i]->mblen(s[i]);
+        if (WINVALIDCHAR(string_errno)) {
+            s[i]->release(s[i]);
+            return -1;
+        }
+        while (j < cols) {
+            s[i]->append(&s[i], "　");
+            j++;
+        }
+        i++;
+    }
+
+    return 0;
+}
+
+static
+int to_char_arr2(STRING** s1, char**** s2, size_t rows)
+{
+    size_t  i   = 0;
+
+    if ((*s2 = (char***)
+                malloc(sizeof(char**) * rows)) == NULL)
+        return -1;
+
+    while (i < rows) {
+        s1[i]->to_char_arr(s1[i], &(*s2)[i]);
+        i++;
+    }
+
+    return 0;
+}
+
+static
+void tateyomi(char*** const s, size_t rows, size_t cols)
+{
+    size_t  i   = 0,
+            j   = 0;
+
+    while (i < cols && (j = rows)) {
+        do {
+            j--;
+            fprintf(stdout, "%s",
+                    *(*(s + j) + i));
+        } while (j);
+        putchar('\n');
+        i++;
+    }
+
+    return;
 }
 
 static
