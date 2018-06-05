@@ -1,0 +1,11 @@
+#!/bin/sh
+
+SCP="scp"
+SSH_PORT=22
+USER="name"
+HOST="example.com"
+DIR="/var/debian"
+FILES="*.deb *.dsc *.tar.gz *.buildinfo *.changes"
+
+ls ${FILES} > /dev/null 2>&1 || exit 1
+${SCP} -P ${SSH_PORT} ${FILES} ${USER}@${HOST}:${DIR}
