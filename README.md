@@ -205,3 +205,7 @@ LOGFILE="/var/log/rsync_backup.log"
 ### uldebrepo
 
 scp でリモートの apt リポジトリへアップロードするのが地味に面倒なのを簡略化するやつ。
+
+### temp
+
+Raspberry Pi で現在の温度を知るやつ。素の Debian GNU/Linux や Arch Linux でオススメ。

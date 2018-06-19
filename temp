@@ -1,0 +1,6 @@
+#!/bin/sh
+
+CLASS_THERMAL="/sys/class/thermal/thermal_zone0/temp"
+test -r ${CLASS_THERMAL} || exit 1
+
+echo "temp = $(expr $(cat ${CLASS_THERMAL}) / 1000)'C"
