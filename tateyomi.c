@@ -3,8 +3,11 @@
  *
  * require. libbenly >= 1.0.0-33
  *
- * % gcc -lbenly_typestring tateyomi.c -o tateyomi
+ * % gcc $(pkg-config --cflags --libs glib-2.0) -lbenly_typestring tateyomi.c -o tateyomi
  */
+
+#define	WITH_GLIB
+
 #include <benly/typestring.h>
 #include <stdio.h>
 #include <stdlib.h> /* malloc(), realloc(), free() */
