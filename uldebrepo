@@ -1,11 +1,12 @@
-#!/bin/sh
+#!/bin/bash
 
 SCP="scp"
 SSH_PORT=22
 USER="name"
-HOST="example.com"
-DIR="/var/debian"
+HOSTS=("sub1.example.com" "sub2.example.com")
+DIR="/var/www/pub/debian"
 FILES="*.deb *.dsc *.tar.gz *.buildinfo *.changes"
 
-ls ${FILES} > /dev/null 2>&1 || exit 1
-${SCP} -P ${SSH_PORT} ${FILES} ${USER}@${HOST}:${DIR}
+for ((i = 0; i < ${#HOSTS[@]}; i++)); do
+    ${SCP} -P ${SSH_PORT} ${FILES} ${USER}@${HOSTS[${i}]}:${DIR}
+done
