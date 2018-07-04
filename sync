@@ -19,7 +19,7 @@ DATE=$(date +"%Y%m%d%H%M")
 sudo true
 for ((i = 0; i < ${#HOSTS[@]}; i++)); do
     echo -n "transferring data from ${HOSTS[${i}]}..."
-    test -d ${DESTROOT}/${HOSTS[${i}]} || mkdir ${DESTROOT}/${HOSTS[${i}]} 
+    test -d ${DESTROOT}/${HOSTS[${i}]} || mkdir ${DESTROOT}/${HOSTS[${i}]}
     mkdir ${DESTROOT}/${HOSTS[${i}]}/${DATE} || exit 1
     sudo ${RSYNC} ${RSYNC_OPT} \
             --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} \
