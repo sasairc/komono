@@ -1,0 +1,28 @@
+#!/bin/bash
+#
+# だって PermitRootLogin yes のほうが楽なんだもん！
+#
+
+HOSTS=("dentaku.ssiserver.moe.hm"       \
+       "nummern.ssiserver.moe.hm"       \
+       "computerwelt.ssiserver.moe.hm"  \
+       "computerwelt2.ssiserver.moe.hm" \
+       "aerodynamik.ssiserver.moe.hm"   \
+       "robots.ssiserver.moe.hm"        \
+       "computerliebe.ssiserver.moe.hm")
+TARGET="/"
+RSYNC="/usr/bin/rsync"
+RSYNC_OPT="-aAH --numeric-ids"
+DESTROOT="/home/sasai/Devel/ssiserver.moe.hm/sync"
+DATE=$(date +"%Y%m%d%H%M")
+
+sudo true
+for ((i = 0; i < ${#HOSTS[@]}; i++)); do
+    echo -n "transferring data from ${HOSTS[${i}]}..."
+    test -d ${DESTROOT}/${HOSTS[${i}]} || mkdir ${DESTROOT}/${HOSTS[${i}]} 
+    mkdir ${DESTROOT}/${HOSTS[${i}]}/${DATE} || exit 1
+    sudo ${RSYNC} ${RSYNC_OPT} \
+            --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} \
+            -e ssh root@${HOSTS[${i}]}:${TARGET} ${DESTROOT}/${HOSTS[${i}]}/${DATE}/
+    test $? -eq 0 && echo "done" || echo "fail"
+done
